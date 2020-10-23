@@ -204,23 +204,34 @@ Proof.
 Theorem mult_0_r : forall n:nat,
   n * 0 = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+    induction n as [| n' IHn'].
+    - reflexivity.
+    - simpl. rewrite -> IHn'. reflexivity. Qed.
 
 Theorem plus_n_Sm : forall n m : nat,
   S (n + m) = n + (S m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros n m. induction n as [| n' IHn'].
+    - simpl. reflexivity.
+    - simpl. rewrite <- IHn'. reflexivity. Qed.
 
 Theorem plus_comm : forall n m : nat,
   n + m = m + n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros n m. induction n as [| n' IHn'].
+    - simpl. rewrite <- plus_n_O. reflexivity.
+    - simpl. rewrite -> IHn'.  rewrite -> plus_n_Sm. reflexivity.
+Qed.
+
 
 Theorem plus_assoc : forall n m p : nat,
   n + (m + p) = (n + m) + p.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+    intros n m p. induction m as [|m' IHm']. 
+    - simpl. rewrite <- plus_n_O. reflexivity.
+    - simpl.  
+      rewrite <- plus_n_Sm. rewrite -> IHm'. 
+      rewrite <- plus_n_Sm. simpl. reflexivity. Qed.
 
 (** **** Exercise: 2 stars, standard (double_plus) 
 
@@ -236,7 +247,11 @@ Fixpoint double (n:nat) :=
 
 Lemma double_plus : forall n, double n = n + n .
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros n. induction  n. 
+    - simpl. reflexivity.
+    - simpl. rewrite <- plus_n_Sm. rewrite <- IHn. reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (evenb_S) 
@@ -251,7 +266,10 @@ Proof.
 Theorem evenb_S : forall n : nat,
   evenb (S n) = negb (evenb n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros n. induction n.
+    -  simpl. reflexivity.
+    -  rewrite -> IHn. simpl. rewrite -> negb_involutive. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard, optional (destruct_induction) 
@@ -259,7 +277,7 @@ Proof.
     Briefly explain the difference between the tactics [destruct]
     and [induction].
 
-(* FILL IN HERE *)
+(* destruct goes 1 level deep into a choice, while induction goes infinitely deep into a choice. Destruct expects  you to define what should happen in very case. While induction expects you to define the initial case and the recursive case. *)
 *)
 
 (* Do not modify the following line: *)
@@ -455,9 +473,34 @@ Proof.
 
     Translate your solution for [plus_comm] into an informal proof:
 
-    Theorem: Addition is commutative.
+    In coq it's:
+        Theorem plus_comm : forall n m : nat,
+          n + m = m + n.
+        Proof.
+            intros n m. induction n as [| n' IHn'].
+            - simpl. rewrite <- plus_n_O. reflexivity.
+            - simpl. rewrite -> IHn'.  rewrite -> plus_n_Sm. reflexivity.
+        Qed.
 
-    Proof: (* FILL IN HERE *)
+    Theorem: Addition is commutative.
+    _Theorem_: For any [n], [m] and [p],
+        n + m = m + n
+        
+    Proof by induction on [n]: 
+    -  First suppose [n=0]. we must show that
+          0 + m = m + 0 
+          this follows from plus_n_0
+
+    - Next, suppose [n = S n'] where
+          n' + m = m + n'
+    we must now show that 
+        (S n') + m = m + (S n')
+    By definition of S:
+        S (n' + m) = m + (S n')
+    using the hypothesis:
+        S (m + n') = m + S n'
+    using plus_n_Sm:
+        m + S n' = m + S n'
 *)
 
 (* Do not modify the following line: *)
@@ -472,7 +515,16 @@ Definition manual_grade_for_plus_comm_informal : option (nat*string) := None.
 
     Theorem: [true = n =? n] for any [n].
 
-    Proof: (* FILL IN HERE *)
+    Proof: (*  
+        induction on n
+
+        0 ?= 0 => simply evaluate...
+
+        hyp: n' = n' 
+        S n' = S n'
+        wich simplifies to n' = n'
+        wich we know to be true due to the induction.
+    *)
 *)
 (** [] *)
 
@@ -487,16 +539,47 @@ Definition manual_grade_for_plus_comm_informal : option (nat*string) := None.
 Theorem plus_swap : forall n m p : nat,
   n + (m + p) = m + (n + p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros n m p.
+    rewrite -> plus_comm.
+    assert (H1: n + p =  p + n). { rewrite -> plus_comm. reflexivity. }
+    rewrite -> H1.
+    rewrite -> plus_assoc.
+    reflexivity.
+Qed.
 
 (** Now prove commutativity of multiplication.  You will probably
     want to define and prove a "helper" theorem to be used
     in the proof of this one. Hint: what is [n * (1 + k)]? *)
 
+Theorem mult_n_0 : forall n : nat,
+    n*0 = 0.
+Proof.
+    intros n.
+    induction n as [|n' IHn'].
+    - reflexivity.
+    - simpl. rewrite -> IHn'. reflexivity.
+Qed.
+
+Theorem mult_n_Sm : forall n m: nat,
+    n * S m = n+ n*m.
+Proof.
+    intros n m.
+    induction n as [|n' IHn'].
+    - reflexivity.
+    - simpl. rewrite <- plus_swap. rewrite <- IHn'. reflexivity.
+Qed.
+
+(** This was quiet hard after a serveral hours, I took a peek at some existing solutions. 
+My biggest mistake was trying to do everything with assert. I should just have written the helper theorems seperately. The asserts caused extra conditions that i would never be able to resolve without the comm property, which is exactly what I was trying to proof here.*)
 Theorem mult_comm : forall m n : nat,
   m * n = n * m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros m n.
+    induction m as [| m' IHm'].
+    - simpl. rewrite ->  mult_n_0. reflexivity.
+    - simpl. rewrite -> mult_n_Sm. rewrite <- IHm'. reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (more_exercises) 
@@ -514,31 +597,67 @@ Check leb.
 Theorem leb_refl : forall n:nat,
   true = (n <=? n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+    induction n as  [|n IHn].
+    - simpl. reflexivity. 
+    - simpl. rewrite<-IHn. reflexivity.
+Qed.
 
 Theorem zero_nbeq_S : forall n:nat,
   0 =? (S n) = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+    destruct n.
+    - simpl. reflexivity. 
+    - simpl. reflexivity.
+Qed.
 
 Theorem andb_false_r : forall b : bool,
   andb b false = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+    destruct b.
+    - reflexivity.
+    - reflexivity.
+Qed.
+
+
+Theorem plus_always_bigger : forall n m : nat,
+    n <=? n+ m = true.
+Proof.
+    intros m n.
+    induction m.
+    - reflexivity.
+    - simpl. rewrite -> IHm.
+    reflexivity.
+Qed.
 
 Theorem plus_ble_compat_l : forall n m p : nat,
   n <=? m = true -> (p + n) <=? (p + m) = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros p m n H.  
+    induction n as [|n IHn].
+    - simpl. rewrite -> H. reflexivity.
+    - assert(G: S n + p <=? S n + m = (n + p <=? n + m)). { simpl. reflexivity. }
+      rewrite -> G. 
+      rewrite -> IHn.
+      reflexivity.
+Qed.
+
 
 Theorem S_nbeq_0 : forall n:nat,
   (S n) =? 0 = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros n.
+    destruct n.
+    - reflexivity.
+    - simpl. reflexivity.
+Qed.
 
 Theorem mult_1_l : forall n:nat, 1 * n = n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros n.
+    destruct n.
+    - reflexivity.
+    - simpl. rewrite <- plus_n_O. reflexivity.
+Qed.
 
 Theorem all3_spec : forall b c : bool,
     orb
@@ -547,17 +666,36 @@ Theorem all3_spec : forall b c : bool,
                (negb c))
   = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros b c.
+    destruct b.
+    - destruct c . { reflexivity. }{ reflexivity. }
+    - destruct c . { reflexivity. }{ reflexivity. }
+Qed.
+
+Theorem tst : forall n p : nat,
+    S n * p = p + n*p.
+    simpl.  reflexivity.
+Qed.
 
 Theorem mult_plus_distr_r : forall n m p : nat,
   (n + m) * p = (n * p) + (m * p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros  n m p.
+    induction n as [|n' IHn'].
+    - simpl. reflexivity.
+    - simpl. rewrite -> IHn'. rewrite -> plus_assoc. reflexivity.
+Qed.
 
 Theorem mult_assoc : forall n m p : nat,
   n * (m * p) = (n * m) * p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros n m p.
+    induction n as [|n' IHn'].
+    - simpl.  reflexivity.
+    - simpl. rewrite plus_comm. rewrite -> IHn'. 
+      rewrite -> mult_plus_distr_r. rewrite -> plus_comm. reflexivity.
+Qed.
+    
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (eqb_refl)  *)
@@ -565,7 +703,11 @@ Proof.
 Theorem eqb_refl : forall n : nat,
   true = (n =? n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+    induction n.
+    - simpl. reflexivity.
+    - simpl. rewrite <- IHn. reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (plus_swap') 
@@ -582,7 +724,13 @@ Proof.
 Theorem plus_swap' : forall n m p : nat,
   n + (m + p) = m + (n + p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+    intros n m p.
+    rewrite -> plus_comm.
+    replace (n + p) with  (p + n).
+    - rewrite -> plus_assoc. reflexivity.
+    - rewrite -> plus_comm. reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, especially useful (binary_commute) 
@@ -611,7 +759,19 @@ Proof.
     want to change your original definitions to make the property
     easier to prove, feel free to do so! *)
 
-(* FILL IN HERE *)
+Fixpoint incr (m:bin) : bin :=
+   match m with 
+   | Z => B1 Z
+   | B0 n => B1 n
+   | B1 n => B0 (incr n)
+   end.
+
+Fixpoint bin_to_nat (m:bin) : nat :=
+   match m with
+   | Z => 0
+   | B0 n => 0 + 2*(bin_to_nat(n))
+   | B1 n => 1 + 2*(bin_to_nat(n))
+   end.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_binary_commute : option (nat*string) := None.
@@ -626,8 +786,31 @@ Definition manual_grade_for_binary_commute : option (nat*string) := None.
     (a) First, write a function to convert natural numbers to binary
         numbers. *)
 
+        (*
+Fixpoint nat_div (n:nat) : nat :=
+    match n with
+    | Z => Z
+    | B0 Z => Z
+    | B1 Z => Z
+    | B0 m => B0 nat_div m
+    | B1 m => B1 nat_div m
+    end.*)
+
+    (*
+Fixpoint dev_rem (n:nat, d: nat) : nat := 
+    if n>d then dev_rem(n-d, d) else d.
+
+Compute((dev_nat 3 2)).
+
+Fixpoint nat_to_bin (n:nat) : bin :=
+    match (n/2) with
+    | 0 =>  Z(*if n % 2 = 1 then B1 Z else Z*)
+    | m =>  Z(*if n % 2 = 1 then B1 nat_to_bin (n/2) else B0 nat_to_bin (n/2)*)
+    end.
+*)
+
 Fixpoint nat_to_bin (n:nat) : bin
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+    (* Fill in here *) Admitted.
 
 (** Prove that, if we start with any [nat], convert it to binary, and
     convert it back, we get the same [nat] we started with.  (Hint: If
